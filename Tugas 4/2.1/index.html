@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Three.js Object Demo</title>
+  <style>
+    body {
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // Initialize Three.js
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Create cube
+    const cubeGeometry = new THREE.BoxGeometry();
+    const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+    const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+    cube.position.set(0, 0, 0);
+    scene.add(cube);
+
+    // Create sphere
+    const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+    const sphereTexture = new THREE.TextureLoader().load('texture.jpeg');
+    const sphereMaterial = new THREE.MeshStandardMaterial({ map: sphereTexture });
+    const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+    sphere.position.set(2, 0, 0);
+    scene.add(sphere);
+
+    // Create cone
+    const coneGeometry = new THREE.ConeGeometry(1, 4, 32);
+    const coneMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+    const cone = new THREE.Mesh(coneGeometry, coneMaterial);
+    cone.position.set(-2, 0, 0);
+    scene.add(cone);
+
+    // Add lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(1, 1, 1);
+    scene.add(directionalLight);
+
+    // Add fog
+    scene.fog = new THREE.Fog(0x000000, 1, 10);
+
+    // Set up panorama background
+    const textureLoader = new THREE.TextureLoader();
+    const panoramaTexture = textureLoader.load('bg.jpeg');
+    scene.background = panoramaTexture;
+
+    // Set initial camera position
+    camera.position.z = 5;
+
+    // Set up camera controls
+    const cameraSpeed = 0.05;
+
+    // Handle keyboard input for camera movement
+    const moveForward = () => {
+      const frontVector = new THREE.Vector3();
+      camera.getWorldDirection(frontVector);
+      camera.position.addScaledVector(frontVector, -cameraSpeed);
+    };
+
+    const moveBackward = () => {
+      const frontVector = new THREE.Vector3();
+      camera.getWorldDirection(frontVector);
+      camera.position.addScaledVector(frontVector, cameraSpeed);
+    };
+
+    const moveLeft = () => {
+      const leftVector = new THREE.Vector3();
+      camera.getWorldDirection(leftVector);
+      leftVector.cross(camera.up);
+      camera.position.addScaledVector(leftVector, -cameraSpeed);
+    };
+
+    const moveRight = () => {
+      const leftVector = new THREE.Vector3();
+      camera.getWorldDirection(leftVector);
+      leftVector.cross(camera.up);
+      camera.position.addScaledVector(leftVector, cameraSpeed);
+    };
+
+    const animate = () => {
+      requestAnimationFrame(animate);
+
+      // Check for keyboard input and move the camera accordingly
+      if (Key.isDown(Key.W)) moveForward();
+      if (Key.isDown(Key.S)) moveBackward();
+      if (Key.isDown(Key.A)) moveLeft();
+      if (Key.isDown(Key.D)) moveRight();
+
+      renderer.render(scene, camera);
+    };
+
+    // Handle keyboard input
+    const Key = {
+      _pressed: {},
+      W: 87,
+      S: 83,
+      A: 65,
+      D: 68,
+      isDown: function(keyCode) {
+        return this._pressed[keyCode];
+      },
+      onKeyDown: function(event) {
+        this._pressed[event.keyCode] = true;
+      },
+      onKeyUp: function(event) {
+        delete this._pressed[event.keyCode];
+      },
+    };
+
+    window.addEventListener('keydown', (e) => Key.onKeyDown(e), false);
+    window.addEventListener('keyup', (e) => Key.onKeyUp(e), false);
+
+    animate();
+  </script>
+</body>
+</html>

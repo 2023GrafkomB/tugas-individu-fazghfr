@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FBX File Loader</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE-edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/FBXLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/libs/fflate.min.js"></script>
+</head>
+
+<body>
+    <script>
+        let scene, camera, renderer;
+        let mixer; 
+        let currentAnimation = null;
+        let fbxLoader; 
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xdddddd);
+
+            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 5000);
+            camera.position.set(0, 100, -200);
+            camera.lookAt(new THREE.Vector3(0, 50, 0));
+
+            const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
+            light.position.set(0, 1, 0);
+            scene.add(light);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+            directionalLight.position.set(0, 1, 0);
+            scene.add(directionalLight);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.addEventListener('change', renderer);
+
+            fbxLoader = new THREE.FBXLoader(); // Initialize fbxLoader
+
+            fbxLoader.load('/model/Idle.fbx', (object) => {
+                scene.add(object);
+
+                // Assuming that the FBX model has animations, let's play the first animation clip.
+                mixer = new THREE.AnimationMixer(object);
+
+                // Get the first animation clip
+                const clip = object.animations[0];
+
+                // Create an animation action and play it
+                const action = mixer.clipAction(clip);
+                action.play();
+                currentAnimation = action;
+
+                animate();
+            });
+
+            // Add event listeners for key presses
+            window.addEventListener('keydown', (event) => {
+                switch (event.key) {
+                    case 'w':
+                        loadAnimation('/model/Slow Run.fbx');
+                        break;
+                    case 'a':
+                        loadAnimation('/model/Idle.fbx');
+                        break;
+                    case ' ':
+                        loadAnimation('/model/Jump.fbx');
+                        break;
+                    case 'e':
+                        loadAnimation('/model/Flip Kick.fbx');
+                        break;
+                    default:
+                        break;
+                }
+            });
+        }
+
+        function loadAnimation(animationFile) {
+            fbxLoader.load(animationFile, (object) => {
+                if (currentAnimation) {
+                    currentAnimation.stop();
+                }
+                const clip = object.animations[0];
+                const action = mixer.clipAction(clip);
+                action.play();
+                currentAnimation = action;
+            })
+        };
+
+
+        function animate() {
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+
+            // Update the animation mixer
+            if (mixer) {
+                mixer.update(0.01); // Adjust the time delta as needed
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
